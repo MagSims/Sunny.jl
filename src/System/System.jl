@@ -206,6 +206,12 @@ end
 # An iterator over all unit cells using CartesianIndices
 @inline eachcell(sys::System) = CartesianIndices(sys.dims)
 
+# Get the neighboring site associated with site and bond
+function bonded_site(site, bond, dims)
+    @assert to_atom(site) == bond.i
+    CartesianIndex(offsetc(to_cell(site), bond.n, dims), bond.j)
+end
+
 """
     spin_label(sys::System, i::Int)
 

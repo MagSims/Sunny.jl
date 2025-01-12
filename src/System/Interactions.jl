@@ -196,9 +196,11 @@ function local_energy_change(sys::System{N}, site, state::SpinState) where N
 
     # Pair coupling
     for pc in pair
-        cellⱼ = offsetc(to_cell(site), pc.bond.n, dims)
-        Sⱼ = dipoles[cellⱼ, pc.bond.j]
-        Zⱼ = coherents[cellⱼ, pc.bond.j]
+        siteⱼ = bonded_site(site, pc.bond, dims)
+        siteⱼ == site && error("Energy delta for self-interaction not supported")
+
+        Sⱼ = dipoles[siteⱼ]
+        Zⱼ = coherents[siteⱼ]
 
         # Bilinear
         J = pc.bilin
