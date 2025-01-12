@@ -160,10 +160,29 @@ function set_vacancy_at!(sys::System{N}, site) where N
 
     site = to_cartesian(site)
     sys.κs[site] = 0.0
+    sys.gs[site] = zero(Mat3)
     sys.dipoles[site] = zero(Vec3)
     sys.coherents[site] = zero(CVec{N})
+
+    # Remove all onsite and pair interactions at vacancy site
+    ints = interactions_inhomog(sys)[site]
+    ints.onsite = empty_anisotropy(sys.mode, N)
+    empty!(ints.pair)
+
+    # Remove all other pair couplings that link to vacancy site
+    for site′ in eachsite(sys)
+        cell′ = to_cell(site′)
+        ints′ = interactions_inhomog(sys)[site′]
+        filter!(ints′.pair) do (; bond)
+            bonded_cell = offsetc(cell′, bond.n, sys.dims)
+            return to_cell(site) != bonded_cell || to_atom(site) != bond.j
+        end
+    end
 end
 
+function is_vacant(sys::System, site)
+    return iszero(sys.κs[to_cartesian(site)])
+end
 
 function local_energy_change(sys::System{N}, site, state::SpinState) where N
     (; S, Z) = state
@@ -196,9 +215,11 @@ function local_energy_change(sys::System{N}, site, state::SpinState) where N
 
     # Pair coupling
     for pc in pair
-        cellⱼ = offsetc(to_cell(site), pc.bond.n, dims)
-        Sⱼ = dipoles[cellⱼ, pc.bond.j]
-        Zⱼ = coherents[cellⱼ, pc.bond.j]
+        siteⱼ = bonded_site(site, pc.bond, dims)
+        siteⱼ == site && error("Energy delta for self-interaction not supported")
+
+        Sⱼ = dipoles[siteⱼ]
+        Zⱼ = coherents[siteⱼ]
 
         # Bilinear
         J = pc.bilin
@@ -279,7 +300,7 @@ function energy(sys::System{N}) where N
     if !isnothing(sys.ewald)
         E += ewald_energy(sys)
     end
-    
+
     return E
 end
 
