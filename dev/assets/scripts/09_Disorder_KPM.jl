@@ -22,7 +22,7 @@ plot_intensities(res)
 
 sys_inhom = to_inhomogeneous(repeat_periodically(sys, (10, 10, 1)))
 
-for (site1, site2, offset) in symmetry_equivalent_bonds(sys_inhom, Bond(1,1,[1,0,0]))
+for (site1, site2, offset) in symmetry_equivalent_bonds(sys_inhom, Bond(1, 1, [1, 0, 0]))
     noise = randn()/3
     set_exchange_at!(sys_inhom, 1.0 + noise, site1, site2; offset)
 end
@@ -30,7 +30,7 @@ end
 minimize_energy!(sys_inhom, maxiters=5_000)
 plot_spins(sys_inhom; color=[S[3] for S in sys_inhom.dipoles], ndims=2)
 
-swt = SpinWaveTheoryKPM(sys_inhom; measure=ssf_perp(sys_inhom), tol=0.01)
+swt = SpinWaveTheoryKPM(sys_inhom; measure=ssf_perp(sys_inhom), tol=0.05)
 res = intensities(swt, path; energies, kernel)
 plot_intensities(res)
 
@@ -39,7 +39,7 @@ randomize_spins!(sys_inhom)
 minimize_energy!(sys_inhom)
 
 energies = range(0.0, 9.0, 150)
-swt = SpinWaveTheoryKPM(sys_inhom; measure=ssf_perp(sys_inhom), tol=0.1)
+swt = SpinWaveTheoryKPM(sys_inhom; measure=ssf_perp(sys_inhom), tol=0.05)
 res = intensities(swt, path; energies, kernel)
 plot_intensities(res)
 
@@ -47,8 +47,10 @@ for site in eachsite(sys_inhom)
     noise = randn()/6
     sys_inhom.gs[site] = [1 0 0; 0 1 0; 0 0 1+noise]
 end
+randomize_spins!(sys_inhom)
+minimize_energy!(sys_inhom)
 
-swt = SpinWaveTheoryKPM(sys_inhom; measure=ssf_perp(sys_inhom), tol=0.1)
+swt = SpinWaveTheoryKPM(sys_inhom; measure=ssf_perp(sys_inhom), tol=0.05)
 res = intensities(swt, path; energies, kernel)
 plot_intensities(res)
 
